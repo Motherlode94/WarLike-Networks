@@ -1,0 +1,1 @@
+CREATE TABLE network_contacts(user_id TEXT NOT NULL REFERENCES network_members(user_id),line_id INTEGER NOT NULL REFERENCES network_lines(id),name TEXT NOT NULL CHECK(length(name) BETWEEN 1 AND 80),PRIMARY KEY(user_id,line_id));
