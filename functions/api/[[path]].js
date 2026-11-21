@@ -10,6 +10,11 @@ if(path==='login'&&method==='POST'){if(typeof b.username!=='string'||b.username.
 const t=token(req);if(path==='logout'&&method==='POST'){if(t)await upstream(env,'logout',req,t).catch(()=>{});return json({ok:true},200,{'set-cookie':cookie('',0)});}
 if(!t)return json({error:'Connexion requise'},401);const sess=await upstream(env,'session',req,t);if(!sess.ok)return json({error:'Session indisponible'},sess.status>=500?503:401);const s=await sess.json();if(!s.user||s.mustChange)return json({error:'Connexion requise'},401);const u=s.user;
 await db.prepare('INSERT INTO network_members(user_id,display_name) VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET display_name=excluded.display_name').bind(u.id,String(u.name).slice(0,80)).run();
+if(path==='provision-line'&&method==='POST'){
+ await db.prepare("INSERT OR IGNORE INTO network_lines(user_id,created_at) SELECT ?,? WHERE NOT EXISTS(SELECT 1 FROM network_lines WHERE user_id=?) AND (SELECT COALESCE(MAX(id),0) FROM network_lines)<99999999").bind(u.id,Date.now(),u.id).run();
+ const l=await db.prepare('SELECT l.*,m.display_name FROM network_lines l JOIN network_members m ON m.user_id=l.user_id WHERE l.user_id=? AND l.revoked_at IS NULL').bind(u.id).first();
+ return l?json({line:line(l)}):json({error:'Attribution indisponible. Contactez un administrateur.'},409);
+}
 if(path==='me'&&method==='GET'){const l=await db.prepare('SELECT l.*,m.display_name FROM network_lines l JOIN network_members m ON m.user_id=l.user_id WHERE l.user_id=? AND l.revoked_at IS NULL').bind(u.id).first();return json({user:{id:u.id,name:u.name,role:u.role},line:l?line(l):null});}
 if(path==='ice'&&method==='POST'){
  const own=await db.prepare('SELECT id FROM network_lines WHERE user_id=? AND revoked_at IS NULL').bind(u.id).first();if(!own)return json({error:'Ligne active requise'},403);
