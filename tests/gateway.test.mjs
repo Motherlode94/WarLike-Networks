@@ -22,3 +22,22 @@ test('native login provisions once and preserves revoked lines',async()=>{
   assert.equal(db.prepare('SELECT revoked_at FROM network_lines').get().revoked_at,1);
  }finally{db.close();}
 });
+
+test('shared contacts persist across sessions and isolate account mutations',async()=>{
+ const db=new DatabaseSync(':memory:');
+ try{
+  for(const f of readdirSync('migrations').sort().filter(x=>x.endsWith('.sql')))db.exec(readFileSync('migrations/'+f,'utf8'));
+  const database={prepare(sql){return {bind(...args){return {async run(){return {meta:{changes:Number(db.prepare(sql).run(...args).changes)}};},async first(){return db.prepare(sql).get(...args);},async all(){return {results:db.prepare(sql).all(...args)};}};}};}};
+  const call=(id,path,body)=>onRequest({request:req(path,{method:body===undefined?'GET':'POST',headers:{origin:'https://warlike-networks.pages.dev',cookie:'__Host-warlike_networks='+'a'.repeat(43)},...(body===undefined?{}:{body:JSON.stringify(body)})}),env:{NETWORKS_DB:database,WARLIKE_SERVER:{async fetch(){return Response.json({user:{id,name:id,role:'member'},mustChange:false});}}}});
+  const a=await call('alpha','provision-line',{}),b=await call('beta','provision-line',{});assert.equal(a.status,200);assert.equal(b.status,200);const number=(await b.json()).line.number;
+  assert.equal((await call('alpha','contact-save',{number,name:'Beta'})).status,200);
+  assert.deepEqual((await (await call('alpha','contacts')).json()).contacts,[{number,name:'Beta'}]);
+  assert.deepEqual((await (await call('beta','contacts')).json()).contacts,[]);
+  assert.equal((await call('beta','contact-delete',{number})).status,200);
+  assert.equal((await (await call('alpha','contacts')).json()).contacts.length,1);
+  assert.equal((await call('alpha','contact-save',{number,name:'Renamed'})).status,200);
+  assert.deepEqual((await (await call('alpha','contacts')).json()).contacts,[{number,name:'Renamed'}]);
+  assert.equal((await call('alpha','contact-delete',{number})).status,200);
+  assert.deepEqual((await (await call('alpha','contacts')).json()).contacts,[]);
+ }finally{db.close();}
+});
