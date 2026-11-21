@@ -1,0 +1,2 @@
+# TURN
+Configure TURN_KEY_ID and TURN_KEY_API_TOKEN as backend secrets, never in Git. Apply migration 0004. POST /api/ice requires authenticated active line, limits issuance to one every 10 seconds and returns temporary ICE credentials (7200 seconds). Missing secrets explicitly return STUN-only mode. Verify relay-only calls on two networks before certification. Cloudflare reference: https://developers.cloudflare.com/realtime/turn/generate-credentials/
