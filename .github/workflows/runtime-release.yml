@@ -1,0 +1,25 @@
+name: Runtime release gate
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm test
+      - run: node scripts/prepare-runtime.mjs
+      - run: node --check dist-runtime/worker.mjs
+      - run: node --check dist-runtime/numbers.js
+      - uses: actions/upload-artifact@v4
+        with:
+          name: networks-runtime-${{ github.sha }}
+          path: dist-runtime/
+          if-no-files-found: error
