@@ -1,0 +1,2 @@
+# Session-bound routing
+New subscriptions bind to SHA-256 of the verified session token and a one-hour renewable lease. Legacy subscriptions require renewal. Local Networks logout deletes matching subscriptions. Internal router requires a live authoritative session-hash verifier; until Server exposes it, do not wire or enable delivery. Chat and Telecom logout must be integrated separately. Expired provider responses delete only the matching subscription version; retries are classified, not scheduled. No public send API.
