@@ -1,0 +1,2 @@
+# Private Chat delivery
+Bind only trusted Chat runtime to Networks named entrypoint ChatPushDelivery. Call notifyPrivateMessage(sender,recipient) after committed private message; caller must establish membership and sender identity. Rechecks bilateral block and permissions, then live recipient session. No public HTTP delivery endpoint. Boolean means routing attempted, not device receipt. Keep delivery disabled until certification.
