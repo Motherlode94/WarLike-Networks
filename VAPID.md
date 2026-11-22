@@ -1,0 +1,2 @@
+# VAPID delivery module
+Internal Web Crypto module, no public sending route. RFC 8291/8188 encryption and RFC 8292 authorization. Configure VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY (secret), VAPID_SUBJECT, and keep PUSH_DELIVERY_ENABLED unset until session-bound revocation and application integration are tested. Caller must verify recipient, remove expired subscriptions using scoped D1 deletes, and schedule bounded retries. No sensitive message contents are sent. Tests use generated temporary keys and mock transport. No live delivery in this PR.
