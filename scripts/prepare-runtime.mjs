@@ -8,6 +8,6 @@ const cols={};for(const x of schema.filter(x=>x.type==='table'))cols[x.name]=db.
 const api=readFileSync('functions/api/[[path]].js','utf8');
 const imp="import {numberFor,parseNumber} from '../../lib/numbers.js';";
 if(!api.startsWith(imp))throw Error('Unexpected gateway import');
-const worker=api.replace(imp,"import {numberFor,parseNumber} from './numbers.js';")+'\nexport default {fetch(request,env){return onRequest({request,env});}};\n';
-mkdirSync('dist-runtime',{recursive:true});writeFileSync('dist-runtime/worker.mjs',worker);writeFileSync('dist-runtime/numbers.js',readFileSync('lib/numbers.js'));writeFileSync('dist-runtime/package.json','{"type":"module"}');writeFileSync('dist-runtime/schema.json',JSON.stringify({migrations,schema,columns:cols},null,2));
+const worker=api.replace(imp,"import {numberFor,parseNumber} from './numbers.js';").replace("../../lib/push-router.js","./push-router.js")+'\nexport default {fetch(request,env,ctx){return onRequest({request,env,waitUntil:ctx.waitUntil.bind(ctx)});}};\n';
+mkdirSync('dist-runtime',{recursive:true});writeFileSync('dist-runtime/worker.mjs',worker);writeFileSync('dist-runtime/numbers.js',readFileSync('lib/numbers.js'));for(const name of ['push-router.js','web-push.js'])writeFileSync('dist-runtime/'+name,readFileSync('lib/'+name));writeFileSync('dist-runtime/package.json','{"type":"module"}');writeFileSync('dist-runtime/schema.json',JSON.stringify({migrations,schema,columns:cols},null,2));
 console.log('Validated '+migrations.length+' migrations; runtime bundle generated.');
