@@ -11,6 +11,11 @@ if(path==='login'&&method==='POST'){if(typeof b.username!=='string'||b.username.
 const t=token(req);if(path==='logout'&&method==='POST'){if(t){try{await db.prepare('DELETE FROM network_push_subscriptions WHERE session_hash=?').bind(await pushSessionHash(t)).run();}finally{await upstream(env,'logout',req,t).catch(()=>{});}}return json({ok:true},200,{'set-cookie':cookie('',0)});}
 if(!t)return json({error:'Connexion requise'},401);const sess=await upstream(env,'session',req,t);if(!sess.ok)return json({error:'Session indisponible'},sess.status>=500?503:401);const s=await sess.json();if(!s.user||s.mustChange)return json({error:'Connexion requise'},401);const u=s.user;
 await db.prepare('INSERT INTO network_members(user_id,display_name) VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET display_name=excluded.display_name').bind(u.id,String(u.name).slice(0,80)).run();
+if(path==='chat-policy'&&method==='POST'){
+ if(typeof b.peer!=='string'||!b.peer||b.peer.length>100||b.peer===u.id)return json({error:'Destinataire invalide'},400);
+ const row=await db.prepare("SELECT EXISTS(SELECT 1 FROM network_contacts c JOIN network_lines l ON l.id=c.line_id WHERE c.blocked=1 AND ((c.user_id=? AND l.user_id=?) OR (c.user_id=? AND l.user_id=?))) AS blocked, EXISTS(SELECT 1 FROM network_permissions WHERE (user_id=? AND message_out=0) OR (user_id=? AND message_in=0)) AS restricted").bind(u.id,b.peer,b.peer,u.id,u.id,b.peer).first();
+ return json({allowed:!row.blocked&&!row.restricted});
+}
 if(path==='push-config'&&method==='GET'){const key=env.VAPID_PUBLIC_KEY;return json({available:typeof key==='string'&&/^B[A-Za-z0-9_-]{86}$/.test(key),publicKey:typeof key==='string'&&/^B[A-Za-z0-9_-]{86}$/.test(key)?key:null});}
 if(path==='push-subscribe'&&method==='POST'){
  const app=b.app,sub=b.subscription;
