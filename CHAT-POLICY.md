@@ -1,0 +1,2 @@
+# Chat policy
+Authenticated POST /api/chat-policy accepts peer (member ID) and returns only allowed. Actor derives from verified session. Both contact block directions, historical line ownership and message permissions are evaluated. Chat must check before each direct write and fail closed if unavailable. Cross-database check and write are not atomic; in-flight writes may race a policy change. No history deletion.
